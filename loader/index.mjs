@@ -17,13 +17,13 @@ class AppLoader {
         return r;
     }
 
-    async loadAppArchive(appInfo, rootExpressApp, appDb, zipFilePath){        
+    async loadAppArchive(appInfo, rootExpressApp, appDb, logger, zipFilePath){        
         await this._unzipAndLoadHandlers(appInfo, rootExpressApp, zipFilePath)
-        await this.loadApp(appInfo, rootExpressApp, appDb);
+        await this.loadApp(appInfo, rootExpressApp, appDb, logger);
     }
 
 
-    async loadApp(appInfo, rootExpressApp, appDb){
+    async loadApp(appInfo, rootExpressApp, appDb, logger){
         this._db[appInfo.id] = appDb;
         const extractedFiles = fs.readdirSync(appInfo.path);
     
@@ -38,7 +38,7 @@ class AppLoader {
         const basePath = appInfo.urlContext; // Controlled base path for each handler
     
         // Load and sandbox the handler with restricted fs and controlled basePath
-        await this._loadHandlerWithRestrictedFs(appInfo, rootExpressApp, appInfo.path, basePath);
+        await this._loadHandlerWithRestrictedFs(appInfo, rootExpressApp, appInfo.path, basePath, logger);
     }
     
     // Dynamically load handlers with restricted access
@@ -71,7 +71,7 @@ class AppLoader {
       };
     
     // Load handler with restricted fs and specific base path
-    async _loadHandlerWithRestrictedFs(appInfo, app, handlerDir, basePath){
+    async _loadHandlerWithRestrictedFs(appInfo, app, handlerDir, basePath, logger){
     //   const restrictedFs = createRestrictedFs(handlerDir);
     
         const handlerPath = path.join(handlerDir, 'index.mjs');
@@ -82,7 +82,7 @@ class AppLoader {
         const handlerModule = await import(handlerURL);
     
         if (typeof handlerModule.default === 'function') {
-            handlerModule.default(app, basePath, this._db[appInfo.id]);
+            handlerModule.default(app, basePath, this._db[appInfo.id], logger);
             console.log(`App ${appInfo.id}@${appInfo.version} initialized at context ${basePath}`)
         }
     };

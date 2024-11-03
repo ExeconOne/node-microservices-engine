@@ -19,6 +19,7 @@ import dbManager from "./engine/databases/index.mjs"
 import fs from 'fs';
 
 import appGuard from './engine/middleware/app-guard/index.mjs';
+import createLogger from './engine/app-logger/index.mjs';
 
 // import vm from 'vm';
 // import { createRequire } from 'module';
@@ -51,17 +52,18 @@ const watchUploadsDir = (app, apps) => {
                 const appLoader = AppLoader.getInstance();
                 // make app dir beforehand
                 const appDb = await dbManager.connectAppDB(appInfo)
-                await appLoader.loadAppArchive(appInfo, app, appDb, filePath)
+                const logger = createLogger(appInfo)
+                await appLoader.loadAppArchive(appInfo, app, appDb, logger, filePath)
                 apps.push(appInfo);
             }else{
                 // file is removed, so remove application files (can be redeployed later on or will not
                 // deploy on next restart)
-                console.log(`Going to remove data for : ${filename}`);
+                console.log(`Going to remove data for : ${filename} ...`);
                 const index = apps.findIndex(item=>item.urlContext == appInfo.urlContext)
                 if(index!=-1) apps.splice(index,1);
 
                 fs.rmSync(path.join(__dirname, `apps/${appInfo.id}`), { recursive: true, force: true });
-                // remove/block app
+                console.log(`Going to remove data for : ${filename} ... DONE`);
                 
 
             }            
@@ -120,8 +122,9 @@ const loadInstalledApps = async (app, apps) => {
         const appLoader = AppLoader.getInstance();
         // make app dir beforehand
         const appDb = await dbManager.connectAppDB(appInfo)
-            
-        appLoader.loadApp(appInfo, app, appDb);
+        const logger = createLogger(appInfo)
+
+        appLoader.loadApp(appInfo, app, appDb, logger);
         apps.push(appInfo);
     }
 }

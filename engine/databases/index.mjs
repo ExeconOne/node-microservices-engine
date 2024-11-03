@@ -1,4 +1,5 @@
 import sqlite3 from 'sqlite3';
+import fs from 'fs';
 
 const { Database } = sqlite3.verbose(); // Using destructuring to get Database
 
@@ -11,6 +12,7 @@ class DBManager {
     
     async connectAppDB(appInfo){
         return new Promise( (resolve, reject)=>{
+            fs.mkdirSync(appInfo.path, { recursive: true });
             // Open a new database connection (creates a file if it doesn't exist)
             const db = new Database(`${appInfo.path}/appdb.sqlite`, (err) => {
                 if (err) {

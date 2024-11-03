@@ -8,13 +8,37 @@ import { fileURLToPath, pathToFileURL } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 class AppLoader {
+    constructor(){
+        this._db = {}
+    }
+
     static getInstance(){
         const r = new AppLoader();
         return r;
     }
 
-    async loadApp(appInfo, rootExpressApp, zipFilePath){
-        this._unzipAndLoadHandlers(appInfo, rootExpressApp, zipFilePath)
+    async loadAppArchive(appInfo, rootExpressApp, appDb, zipFilePath){        
+        await this._unzipAndLoadHandlers(appInfo, rootExpressApp, zipFilePath)
+        await this.loadApp(appInfo, rootExpressApp, appDb);
+    }
+
+
+    async loadApp(appInfo, rootExpressApp, appDb){
+        this._db[appInfo.id] = appDb;
+        const extractedFiles = fs.readdirSync(appInfo.path);
+    
+        const packageFile = extractedFiles.find(item=>item=="package.json");
+        const handlerFile = extractedFiles.find(item=>item=="index.js");
+    
+        if(packageFile){
+            // const filePath = path.join(extractDir, packageFile);    
+            await this._installDependencies(appInfo);    
+        }
+    
+        const basePath = appInfo.urlContext; // Controlled base path for each handler
+    
+        // Load and sandbox the handler with restricted fs and controlled basePath
+        await this._loadHandlerWithRestrictedFs(appInfo, rootExpressApp, appInfo.path, basePath);
     }
     
     // Dynamically load handlers with restricted access
@@ -26,59 +50,31 @@ class AppLoader {
     
         await fs.createReadStream(zipFilePath)
             .pipe(unzipper.Extract({ path: extractDir }))
-            .promise();
-    
-        const extractedFiles = fs.readdirSync(extractDir);
-    
-        const packageFile = extractedFiles.find(item=>item=="package.json");
-        const handlerFile = extractedFiles.find(item=>item=="index.js");
-    
-        if(packageFile){
-            // const filePath = path.join(extractDir, packageFile);    
-            await this._installDependencies(extractDir);    
-        }
-    
-        const basePath = `/modem`; // Controlled base path for each handler
-    
-        // Load and sandbox the handler with restricted fs and controlled basePath
-        await this._loadHandlerWithRestrictedFs(app, extractDir, basePath);
-    
-    //   for (const file of extractedFiles) {
-    //     const handlerDir = path.join(extractDir, file);
-    
-    //     // If handler directory contains a package.json, install dependencies
-    //     const packagePath = path.join(handlerDir, 'package.json');
-    //     if (await fileExists(packagePath)) {
-    //       await installDependencies(handlerDir);
-    //     }
-    
-    //     const basePath = `/modem`; // Controlled base path for each handler
-    
-    //     // Load and sandbox the handler with restricted fs and controlled basePath
-    //     await loadHandlerWithRestrictedFs(handlerDir, basePath);
-    //   }
+            .promise();    
     };
     
     // Function to install dependencies in a specific directory
-    async _installDependencies(directory){
-        console.log(directory)
+    async _installDependencies(appInfo){
+        const directory = appInfo.path;
+        console.log(`Installing dependencies for ${appInfo.id}@${appInfo.version} ...`)
         return new Promise((resolve, reject) => {
           exec(`npm install`, { cwd: directory }, (error, stdout, stderr) => {
             if (error) {
               console.error(`Error installing dependencies: ${stderr}`);
               return reject(error);
             }
-            console.log(stdout);
+            // console.log(stdout);
+            console.log(`Installing dependencies for ${appInfo.id}@${appInfo.version} ... DONE.`)
             resolve();
           });
         });
       };
     
     // Load handler with restricted fs and specific base path
-    async _loadHandlerWithRestrictedFs(app, handlerDir, basePath){
+    async _loadHandlerWithRestrictedFs(appInfo, app, handlerDir, basePath){
     //   const restrictedFs = createRestrictedFs(handlerDir);
     
-        const handlerPath = path.join(handlerDir, 'index.js');
+        const handlerPath = path.join(handlerDir, 'index.mjs');
         // const handlerCode = fs.readFileSync(handlerPath, 'utf-8');
         const handlerURL = pathToFileURL(handlerPath);
     
@@ -86,12 +82,12 @@ class AppLoader {
         const handlerModule = await import(handlerURL);
     
         if (typeof handlerModule.default === 'function') {
-            handlerModule.default(app, basePath);
-            console.log(`App initialized ${basePath}`)
+            handlerModule.default(app, basePath, this._db[appInfo.id]);
+            console.log(`App ${appInfo.id}@${appInfo.version} initialized at context ${basePath}`)
         }
     };
 }
 
-const appLoader = AppLoader.getInstance();
 
-export default appLoader;
+
+export default AppLoader;

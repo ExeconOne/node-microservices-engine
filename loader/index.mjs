@@ -24,26 +24,32 @@ class AppLoader {
 
 
     async loadApp(appInfo, rootExpressApp, appDb, logger){
-        this._db[appInfo.id] = appDb;
-        const extractedFiles = fs.readdirSync(appInfo.path);
-    
-        const packageFile = extractedFiles.find(item=>item=="package.json");
-        const handlerFile = extractedFiles.find(item=>item=="index.js");
-    
-        if(packageFile){
-            // const filePath = path.join(extractDir, packageFile);    
-            await this._installDependencies(appInfo);    
+        try{
+            this._db[appInfo.id] = appDb;
+            const extractedFiles = fs.readdirSync(appInfo.path);
+        
+            const packageFile = extractedFiles.find(item=>item=="package.json");
+            const handlerFile = extractedFiles.find(item=>item=="index.js");
+        
+            if(packageFile){
+                // const filePath = path.join(extractDir, packageFile);    
+                await this._installDependencies(appInfo);    
+            }
+        
+            const basePath = appInfo.urlContext; // Controlled base path for each handler
+        
+            // Load and sandbox the handler with restricted fs and controlled basePath
+            await this._loadHandlerWithRestrictedFs(appInfo, rootExpressApp, appInfo.path, basePath, logger);
+        }catch(error){
+            console.error(`Error loading app: ${appInfo.id}-${appInfo.version}`, error);
         }
-    
-        const basePath = appInfo.urlContext; // Controlled base path for each handler
-    
-        // Load and sandbox the handler with restricted fs and controlled basePath
-        await this._loadHandlerWithRestrictedFs(appInfo, rootExpressApp, appInfo.path, basePath, logger);
+        
     }
     
     // Dynamically load handlers with restricted access
     async _unzipAndLoadHandlers(appInfo, app, zipFilePath){
         // const extractDir = path.join(__dirname, 'temp'); // Temporary extraction directory
+        console.log(`Extracting ${appInfo.id}-${appInfo.version} to: ${appInfo.path}`)
         const extractDir = appInfo.path;
         
         fs.mkdirSync(extractDir, { recursive: true });

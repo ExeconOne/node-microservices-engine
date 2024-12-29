@@ -111,6 +111,8 @@ const readDeployedAppsInfos = (appsDir)=>{
         });
       }
     });
+    console.log(`Detected ${appInfos.length} apps`)
+    appInfos.forEach(item=>console.log(`${item.id}-${item.version}`))
     return appInfos;
   }
 
@@ -133,8 +135,12 @@ app.use(appGuard(apps))
 
 // Start the server
 app.listen(PORT, async () => {
-    console.log(`Server running on port ${PORT}`);
+    
     await loadInstalledApps(app, apps);
     watchUploadsDir(app, apps);
   // start existing apps
+    console.log(`Node Microservices Api running on port: ${PORT}`);
+    console.log(`New microservices zip packages can be deployed to ${uploadsDir}.`)
+    console.log(`Installe ms are running from ${appsDir}`)
+  
 });

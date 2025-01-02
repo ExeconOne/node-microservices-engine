@@ -4,6 +4,7 @@ import unzipper from 'unzipper';
 // import vm from 'vm';
 import { exec } from 'child_process';
 import { fileURLToPath, pathToFileURL } from 'url';
+import { LoggerFactory } from '../engine/app-logger/index.mjs';
 // import { createRequire } from 'module';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -17,14 +18,23 @@ class AppLoader {
         return r;
     }
 
+    /**
+     * @deprecated use loadApp(appInfo, rootExpressApp, appDb, logger, zipFilePath) with zipFilePath instead
+     * @param {*} appInfo 
+     * @param {*} rootExpressApp 
+     * @param {*} appDb 
+     * @param {*} logger 
+     * @param {*} zipFilePath 
+     */
     async loadAppArchive(appInfo, rootExpressApp, appDb, logger, zipFilePath){        
         await this._unzipAndLoadHandlers(appInfo, rootExpressApp, zipFilePath)
         await this.loadApp(appInfo, rootExpressApp, appDb, logger);
     }
 
 
-    async loadApp(appInfo, rootExpressApp, appDb, logger){
+    async loadApp(appInfo, rootExpressApp, appDb, logger, zipFilePath){        
         try{
+            if(zipFilePath) await this._unzipAndLoadHandlers(appInfo, rootExpressApp, zipFilePath);
             this._db[appInfo.id] = appDb;
             const extractedFiles = fs.readdirSync(appInfo.path);
         
@@ -82,14 +92,22 @@ class AppLoader {
     
         const handlerPath = path.join(handlerDir, 'index.mjs');
         // const handlerCode = fs.readFileSync(handlerPath, 'utf-8');
-        const handlerURL = pathToFileURL(handlerPath);
+        const handlerURL2 = pathToFileURL(handlerPath);
+
+        const handlerURL = pathToFileURL(path.resolve(handlerDir, 'index.mjs')).href;
     
         // Import the ESM module dynamically
         const handlerModule = await import(handlerURL);
     
         if (typeof handlerModule.default === 'function') {
-            handlerModule.default(app, basePath, this._db[appInfo.id], logger);
-            console.log(`App ${appInfo.id}@${appInfo.version} initialized at context ${basePath}`)
+            try{
+                handlerModule.default(app, basePath, this._db[appInfo.id], logger);
+                console.log(`App ${appInfo.id}@${appInfo.version} initialized at context ${basePath}`)
+            }catch(error){
+                console.error(`App ${appInfo.id}@${appInfo.version} faile to initialize at context ${basePath}`, error);
+            }
+            
+            
         }
     };
 }

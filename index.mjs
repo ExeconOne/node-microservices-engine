@@ -13,6 +13,7 @@
 import { fileURLToPath, pathToFileURL } from 'url';
 
 import express from 'express';
+import bodyParser from 'body-parser';
 import path from 'path';
 import AppLoader from "./loader/index.mjs"
 import dbManager from "./engine/databases/index.mjs"
@@ -49,12 +50,18 @@ const watchUploadsDir = (app, apps) => {
             if(fs.existsSync(filePath)){                
                 console.log(`New zip file detected: ${filename}`);
                 
-                const appLoader = AppLoader.getInstance();
-                // make app dir beforehand
-                const appDb = await dbManager.connectAppDB(appInfo)
-                const logger = createLogger(appInfo)
-                await appLoader.loadAppArchive(appInfo, app, appDb, logger, filePath)
-                apps.push(appInfo);
+                // const appLoader = AppLoader.getInstance();
+                // // make app dir beforehand
+                // const appDb = await dbManager.connectAppDB(appInfo)
+                // const logger = createLogger(appInfo)
+                // await appLoader.loadAppArchive(appInfo, app, appDb, logger, filePath)
+                try{
+                  await loadApp(appInfo, app, filePath);
+                  apps.push(appInfo);
+                }catch(error){
+                  console.error(`Eroor loading app ${JSON.stringify(appInfo)}`, error);
+                }
+                
             }else{
                 // file is removed, so remove application files (can be redeployed later on or will not
                 // deploy on next restart)
@@ -118,20 +125,50 @@ const readDeployedAppsInfos = (appsDir)=>{
 
 const loadInstalledApps = async (app, apps) => {
     const appInfos = readDeployedAppsInfos(appsDir);
+    console.log(`Going to load installed apps ...`);
+    appInfos.forEach(item=>console.log(`${item.id}.v${item.version}`))
+    
 
     for(let i=0; i< appInfos.length; i++){
+      try{
         const appInfo = appInfos[i];
-        const appLoader = AppLoader.getInstance();
-        // make app dir beforehand
-        const appDb = await dbManager.connectAppDB(appInfo)
-        const logger = createLogger(appInfo)
+        // const appLoader = AppLoader.getInstance();
+        // // make app dir beforehand
+        // const appDb = await dbManager.connectAppDB(appInfo)
+        // const logger = createLogger(appInfo)
 
-        appLoader.loadApp(appInfo, app, appDb, logger);
+        // appLoader.loadApp(appInfo, app, appDb, logger);
+        await loadApp(appInfo, app);
         apps.push(appInfo);
+      }catch(error){
+        console.error(`Error loading app ${JSON.stringify(appInfo)}`, error);
+      }
+        
     }
+    console.log(`Going to load installed apps ... DONE.`);
+}
+
+const loadApp = async (appInfo, app, zipFilePath)=>{
+  const appLoader = AppLoader.getInstance();
+  // make app dir beforehand
+  const appDb = await dbManager.connectAppDB(appInfo)
+  const logger = createLogger(appInfo)
+
+  appLoader.loadApp(appInfo, app, appDb, logger, zipFilePath);  
 }
 
 app.use(appGuard(apps))
+app.use(bodyParser.urlencoded({ extended: true, limit: "1000mb" }));
+app.use(bodyParser.json({limit: "1000mb"}));
+
+// this is for case when deploying an app that has some major error that
+// otherwise would take down whole instance
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+
+  // Optionally perform clean-up or logging
+  // Decide whether to exit the process or keep it running
+});
 
 // Start the server
 app.listen(PORT, async () => {

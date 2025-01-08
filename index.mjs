@@ -11,22 +11,29 @@
 // const { createRequire } = require('module');
 
 import { fileURLToPath, pathToFileURL } from 'url';
-
+import dotenv from 'dotenv';
 import express from 'express';
 import bodyParser from 'body-parser';
 import path from 'path';
 import AppLoader from "./loader/index.mjs"
 import dbManager from "./engine/databases/index.mjs"
 import fs from 'fs';
+import https from 'https'; // Import https module
+import http from 'http'; // Import http module
+
 
 import appGuard from './engine/middleware/app-guard/index.mjs';
 import createLogger from './engine/app-logger/index.mjs';
 
 // import vm from 'vm';
 // import { createRequire } from 'module';
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const PORT_HTTPS = process.env.PORT_HTTPS || 3443;
+//  path to Lets Encrypt generated certs
+const CERT_PATH_LE = process.env.CERT_PATH || `certs`
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, 'uploads');
 const appsDir = path.join(__dirname, 'apps');
@@ -157,6 +164,15 @@ const loadApp = async (appInfo, app, zipFilePath)=>{
   appLoader.loadApp(appInfo, app, appDb, logger, zipFilePath);  
 }
 
+const loadSSLCerts = (certPath)=>{
+  // console.log(path.join(certPath, `privkey.pem`))
+  // console.log(path.join(certPath, `fullchain.pem.pem`))
+  return {
+    key: fs.readFileSync(path.join(certPath, `privkey.pem`)),
+    cert: fs.readFileSync(path.join(certPath, `fullchain.pem`))
+  }  
+}
+
 app.use(appGuard(apps))
 app.use(bodyParser.urlencoded({ extended: true, limit: "1000mb" }));
 app.use(bodyParser.json({limit: "1000mb"}));
@@ -170,14 +186,39 @@ process.on('uncaughtException', (error) => {
   // Decide whether to exit the process or keep it running
 });
 
-// Start the server
-app.listen(PORT, async () => {
+try{
+  const sslOptions = loadSSLCerts(CERT_PATH_LE)
+
+  // Create the HTTPS server instead of app.listen()
+  https.createServer(sslOptions, app).listen(PORT_HTTPS, () => {
+    (async ()=>{      
+      await loadInstalledApps(app, apps);
+      watchUploadsDir(app, apps);
+      // start existing apps
+      console.log(`Node Microservices Api running HTTPS mode on port: ${PORT}/${PORT_HTTPS}`);
+      console.log(`New microservices zip packages can be deployed to ${uploadsDir}.`)
+      console.log(`Installed ms are running from ${appsDir}`)    
+    })()
     
+  });
+
+  // Create an HTTP server to redirect all traffic to HTTPS
+  http.createServer((req, res) => {
+    res.writeHead(301, { 'Location': 'https://' + req.headers['host'] + req.url });
+    res.end();
+  }).listen(PORT, () => {
+    console.log(`Redirecting HTTP traffic on port ${PORT} to HTTPS on port ${PORT_HTTPS}...`);
+  });
+}catch(error){
+  console.log(`Starting in HTTP mode. Provide SSL certifcates at at path: "${CERT_PATH_LE}/privkey.pem" and "${CERT_PATH_LE}/fullchain.pem" to start in HTTPS mode. `, error);
+  // failed to start http only http mode is enabled
+  // Start the server
+  app.listen(PORT, async () => {
     await loadInstalledApps(app, apps);
     watchUploadsDir(app, apps);
-  // start existing apps
+    // start existing apps
     console.log(`Node Microservices Api running on port: ${PORT}`);
     console.log(`New microservices zip packages can be deployed to ${uploadsDir}.`)
-    console.log(`Installe ms are running from ${appsDir}`)
-  
-});
+    console.log(`Installe ms are running from ${appsDir}`)  
+  });
+}

@@ -6,8 +6,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.mjs",
-    "manual-build": "node zip -r node-ms-api.zip loader/ engine/ index.mjs package.json .env",
-    "manual-deploy": "npm run manual-build && scp ./node-ms-api.zip root@65.21.124.153:/home/adi-api"
+    "manual-build": "zip -r node-ms-api.zip loader/ engine/ index.mjs package.json .env",
+    "manual-copy": "scp -v ./node-ms-api.zip root@65.21.124.153:/home/adi-api",
+    "manual-deploy": "npm run manual-build && npm run manual-copy",
+    "manual-copy-certs-1": "scp -v /etc/letsencrypt/live/abee.cloud/fullchain.pem root@65.21.124.153:/home/adi-api/certs",
+    "manual-copy-certs-2": "scp -v /etc/letsencrypt/live/abee.cloud/privkey.pem root@65.21.124.153:/home/adi-api/certs",
+    "manual-copy-certs": "sudo npm run manual-copy-certs-1 && sudo npm run manual-copy-certs-2"
   },
   "type": "module",
   "author": "",

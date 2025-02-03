@@ -153,6 +153,55 @@ The current implementation of the `DBManager` uses **SQLite** as the database so
 - If an error occurs during the database connection or creation, the platform logs the error without taking down the entire server.
 - Database-related issues are logged for further investigation.
 
+## Features Provided by Node Microservices API to Deployed Apps
+The Node Microservices API offers a set of powerful features to support the deployment and management of microservices in a seamless and efficient manner. Below is an overview of the key capabilities and features available to any app deployed in the Node Microservices API.
+
+1. Dynamic App Deployment
+Automatic Deployment: Apps can be dynamically deployed by simply uploading a zip file to the uploads directory. The Node Microservices API extracts and deploys the app, creating necessary directories and configurations.
+Version Control: Each app is versioned and stored in its respective directory within the apps directory. Version management is handled automatically.
+App Removal: If an app zip file is removed, the corresponding app is also removed, along with all associated files and data, ensuring clean deployment management.
+2. Database Support per App
+Dedicated Databases: Each deployed app gets its own isolated SQLite database, ensuring that data for each microservice is kept separate and secure.
+Automatic Database Creation: The platform automatically creates and connects to a database for each app during deployment. The database is stored within the app's directory for easy access.
+Database Management: Apps can access and modify their databases directly using SQLite, with full CRUD capabilities available for app-specific data management.
+3. Custom Middleware Support
+Custom Middleware Integration: Deployed apps can define and use custom middleware to handle pre-processing of requests, authentication, logging, validation, and more.
+App Guard Middleware: The platform includes a security middleware that ensures all deployed apps are securely accessed, offering basic access controls to protect your services.
+4. Dynamic Logging
+App-Specific Logging: Each deployed app can define its own logger, which captures logs related to the app’s activities. This allows for granular debugging and monitoring of each microservice.
+Integrated Logging: The Node Microservices API integrates with each app’s logger to capture relevant events, such as app startup, request/response cycles, and database interactions.
+5. Secure HTTPS Support
+SSL/TLS Encryption: The Node Microservices API supports HTTPS mode for secure communication between clients and deployed apps. SSL certificates are automatically integrated if available, providing end-to-end encryption.
+HTTP to HTTPS Redirection: HTTP traffic is automatically redirected to HTTPS if the app is running in HTTPS mode, ensuring secure connections.
+6. File Handling
+App File Uploads: Apps can define their own file handling mechanisms for accepting, processing, and serving files. The platform allows apps to easily manage file uploads and access uploaded files from their designated directories.
+App File Storage: Files uploaded by apps can be stored and organized within the app’s directory, ensuring isolation of files per app.
+7. Custom Routing and Base Paths
+Flexible Routing: Deployed apps can specify custom routing rules and base paths, allowing for the organization of multiple services under different URL paths.
+Base Path Management: Apps are assigned base paths where they will be accessible. This allows for easy routing and integration with other services deployed on the platform.
+8. Error Handling
+Graceful Error Management: The platform provides graceful handling of uncaught exceptions to prevent app crashes from taking down the entire instance. Apps can define custom error handlers to manage application-specific errors and recover gracefully.
+App-Specific Error Logs: Errors are logged per app, making it easy to diagnose issues within each deployed microservice without affecting the rest of the platform.
+9. App Configuration
+Configuration Handling: Each deployed app can define its own configuration settings (e.g., environment variables, configuration files). These settings can be dynamically managed and accessed throughout the app.
+App Initialization: Apps can initialize their configuration, database, and other settings during startup to ensure they are ready to handle requests.
+10. Auto-Scaling and Monitoring
+Auto-Scaling: The platform is capable of scaling deployed apps based on load and resource requirements (this would need external infrastructure support).
+Monitoring: The Node Microservices API captures essential logs and metrics (e.g., number of requests, response times) for each app, making it easy to monitor app performance and health.
+11. Customizable API Endpoints
+API Definition: Apps can define custom API endpoints based on their business logic and needs, including handling various HTTP methods such as GET, POST, PUT, DELETE, etc.
+Request Handling: The platform allows apps to handle HTTP requests, process data, and respond with dynamic outputs (e.g., JSON, HTML, files, etc.).
+12. App Update and Rollback
+Easy Updates: When a new version of an app is uploaded, the platform automatically handles the deployment of the updated version, ensuring minimal downtime.
+Rollback Capability: In case of failure during app deployment or execution, previous versions can be quickly restored to maintain service availability.
+13. Access to Native Node.js Modules
+Extensive Module Support: Deployed apps can take advantage of the full suite of Node.js built-in modules (e.g., fs, http, https, path, sqlite3, etc.) to handle their backend operations, file management, networking, and more.
+Third-Party Modules: Apps can also use additional NPM packages to extend functionality beyond the built-in modules.
+14. Seamless App Lifecycle Management
+App Start & Stop: Apps are automatically started when deployed and can be stopped if necessary through the platform. App lifecycle is managed to ensure they are running in a stable state.
+App Monitoring: Continuous monitoring of apps ensures they are up and running smoothly. Errors and issues are logged and tracked for fast resolution.
+
+
 ## Contributing
 
 Feel free to fork the repository and submit pull requests for improvements or new features.
@@ -166,3 +215,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Missing SSL certificates**: If SSL certificates are not found, the app will fall back to HTTP mode.
 - **App deployment issues**: Check the `logs` for specific errors related to app extraction or loading.
 - **Database connection issues**: Ensure the app's database directory and permissions are correctly set up. If the database file cannot be created, check the file path and ensure there is no permission issue.
+
+

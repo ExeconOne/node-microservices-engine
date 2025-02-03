@@ -1,0 +1,15 @@
+{
+    "name": "@archimedes/httpecho",
+    "version": "1.0.0",
+    "description": "Echo Service",
+    "main": "index.mjs",
+    "type": "module",
+    "scripts": {      
+      "publish-patch": "npm version patch && git push origin && git push origin --tags"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {}
+}
+  

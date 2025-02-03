@@ -13,7 +13,7 @@ This project is a Node.js-based microservices platform that handles dynamic depl
 ## Project Setup
 
 ### Requirements
-- **Node.js**: v14 or above
+- **Node.js**: v18 or above
 - **npm**: v6 or above
 - **SSL Certificates**: Required for HTTPS mode (privkey.pem and fullchain.pem)
 

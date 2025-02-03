@@ -1,6 +1,6 @@
 # Node Microservices API
 
-This project is a Node.js-based microservices platform that handles dynamic deployment of apps in zip file format. The platform supports both HTTP and HTTPS modes and allows seamless app updates and management through file uploads.
+This project is a Node.js-based microservices platform that handles dynamic deployment of NodeJs apps in zip file format. The platform supports both HTTP and HTTPS modes and allows seamless app updates and management through file uploads.
 
 ## Features
 - **Dynamic app deployment**: Automatically deploys apps by extracting them from uploaded zip files.

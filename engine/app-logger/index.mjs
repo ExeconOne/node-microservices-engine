@@ -17,6 +17,10 @@ const createLogger = (appInfo, requestId) => {
             const logMessage = `[${new Date().toISOString()}] [${requestId||""}] LOG: ${util.format(...args)}\n`;
             fs.appendFileSync(logFilePath, logMessage);
         },
+        debug: (...args) => {
+            const logMessage = `[${new Date().toISOString()}] [${requestId||""}] DEBUG: ${util.format(...args)}\n`;
+            fs.appendFileSync(logFilePath, logMessage);
+        },
         error: (...args) => {
             const logMessage = `[${new Date().toISOString()}] [${requestId||""}] ERROR: ${util.format(...args)}\n`;
             fs.appendFileSync(logFilePath, logMessage);

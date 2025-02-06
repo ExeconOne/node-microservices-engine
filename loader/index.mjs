@@ -50,6 +50,7 @@ class AppLoader {
         
             // Load and sandbox the handler with restricted fs and controlled basePath
             await this._loadHandlerWithRestrictedFs(appInfo, rootExpressApp, appInfo.path, basePath, logger);
+            logger.log(`App started successfully. Operational at ${basePath}`);
         }catch(error){
             console.error(`Error loading app: ${appInfo.id}-${appInfo.version}`, error);
         }

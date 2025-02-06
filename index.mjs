@@ -35,23 +35,40 @@ const PORT_HTTPS = process.env.PORT_HTTPS || 3443;
 //  path to Lets Encrypt generated certs
 const CERT_PATH_LE = process.env.CERT_PATH || `certs`
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadsDir = path.join(__dirname, 'uploads');
-const appsDir = path.join(__dirname, 'apps');
+const uploadsDir = process.env.UPLOADS_DIR||path.join(__dirname, 'uploads');
+const appsDir = process.env.APPS_DIR||path.join(__dirname, 'apps');
+
+console.log(`Node MS starting at ${__dirname}.`)
+console.log(`Uploads location: ${uploadsDir}. You can change it by setting UPLOADS_DIR env variable.`)
+console.log(`Apps location: ${appsDir}. You can change it by setting APPS_DIR env variable.`)
+console.log(`Certs location: ${CERT_PATH_LE}. You can change it by setting CERT_PATH env variable.`)
 
 const apps = []
+
+const decodeAppNameAndVersion = (filename) => {
+  const match = filename.match(/(.+)_v(\d+\.\d+\.\d+)\.zip$/);
+  if (match) {
+      return { appName: match[1], appVersion: match[2] };
+  }
+  throw Error(`Invalid package name ${filename}. Must follow APPNAME_vVERSION.zip pattern.`);
+} 
 
 // Watch for new files in the `uploads` directory
 const watchUploadsDir = (app, apps) => {
     fs.watch(uploadsDir, async (eventType, filename) => {
         if (eventType === 'rename' && filename.endsWith('.zip')) {
             const filePath = path.join(uploadsDir, filename);
-            const appName = filename.split(".")[0];
-            const appVersion = filename.split(".")[1];
+            // adi-in-proxy-1.0.6.zip
+
+            const {appName, appVersion} = decodeAppNameAndVersion(filename);
+            
+
+
             const appInfo = {
                 id: appName,
                 version: appVersion,                
             }
-            appInfo.path = path.join(__dirname, `apps/${appInfo.id}/${appInfo.version}`)
+            appInfo.path = `${appsDir}/${appInfo.id}/${appInfo.version}`;
             appInfo.urlContext = `/${appInfo.id}/${appInfo.version}`   
 
             if(fs.existsSync(filePath)){                

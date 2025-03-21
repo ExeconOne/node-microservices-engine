@@ -20,6 +20,7 @@ import dbManager from "./engine/databases/index.mjs"
 import fs from 'fs';
 import https from 'https'; // Import https module
 import http from 'http'; // Import http module
+import cors from 'cors';
 
 
 import appGuard from './engine/middleware/app-guard/index.mjs';
@@ -30,6 +31,9 @@ import createLogger from './engine/app-logger/index.mjs';
 dotenv.config();
 
 const app = express();
+// allow cors
+app.use(cors());
+
 const PORT = process.env.PORT || 3000;
 const PORT_HTTPS = process.env.PORT_HTTPS || 3443;
 //  path to Lets Encrypt generated certs
